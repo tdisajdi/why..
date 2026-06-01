@@ -827,7 +827,7 @@ JSON 배열만 출력:
 [{"id":"job_...","type":"active","name":"...","icon":"...","rarity":"common","mpCost":10,"hpCost":0,"hpRestore":0,"req":{},"desc":"...","aiHint":"...","condition":null,"conditionDesc":null,"statBoost":{},"scenario":${JSON.stringify(scenarioId)},"jobRole":${JSON.stringify(roleName)}}, ...]`;
 
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text: prompt }] }], generationConfig:{ temperature:1.0, maxOutputTokens:8192 } })
       });
@@ -845,20 +845,10 @@ JSON 배열만 출력:
       setJobSkillCount(valid.length);
       setJobSkillDone(true);
     } catch(e) {
-      const sid = scenario?.id || "custom";
-      const fb = [
-        {id:"job_attack",type:"active",name:"기본 공격",icon:"⚔️",rarity:"common",mpCost:0,hpCost:0,hpRestore:0,req:{},desc:"기본 전투 기술.",aiHint:"기본 공격을 사용합니다.",condition:null,conditionDesc:null,statBoost:{},scenario:sid,jobRole:roleName},
-        {id:"job_heavy",type:"active",name:"강타",icon:"💥",rarity:"uncommon",mpCost:15,hpCost:0,hpRestore:0,req:{str:20},desc:"강력한 일격.",aiHint:"강타를 날립니다.",condition:null,conditionDesc:null,statBoost:{},scenario:sid,jobRole:roleName},
-        {id:"job_focus",type:"active",name:"집중",icon:"🎯",rarity:"uncommon",mpCost:10,hpCost:0,hpRestore:0,req:{},desc:"정신을 집중해 다음 판정을 향상시킨다.",aiHint:"깊게 집중합니다.",condition:null,conditionDesc:null,statBoost:{},scenario:sid,jobRole:roleName},
-        {id:"job_evade",type:"passive",name:"회피 본능",icon:"🌪️",rarity:"common",mpCost:0,hpCost:0,hpRestore:0,req:{agi:15},desc:"공격을 피한다. AGI +6.",aiHint:"날렵하게 피합니다.",condition:"in_combat",conditionDesc:"전투 중",statBoost:{agi:6},scenario:sid,jobRole:roleName},
-        {id:"job_endure",type:"passive",name:"인내",icon:"🛡️",rarity:"common",mpCost:0,hpCost:0,hpRestore:0,req:{end:15},desc:"피해를 버텨낸다. END +6.",aiHint:"버텨냅니다.",condition:"in_combat",conditionDesc:"전투 중",statBoost:{end:6},scenario:sid,jobRole:roleName},
-        {id:"job_second",type:"event",name:"두 번째 바람",icon:"💪",rarity:"rare",mpCost:0,hpCost:0,hpRestore:25,req:{},desc:"위기 순간 HP 25 회복.",aiHint:"강하게 일어납니다.",condition:"hp_critical",conditionDesc:"HP 30% 이하",statBoost:{},scenario:sid,jobRole:roleName},
-        {id:"job_last",type:"event",name:"최후의 저항",icon:"🌟",rarity:"legendary",mpCost:0,hpCost:0,hpRestore:0,req:{},desc:"죽음 직전 모든 힘을 끌어모아 반격한다.",aiHint:"비장의 카드를 꺼냅니다!",condition:"hp_danger",conditionDesc:"HP 15% 이하",statBoost:{str:20,agi:15},scenario:sid,jobRole:roleName},
-      ];
-      const ex = loadJobSkills().filter(s => s.id?.startsWith("race_"));
-      saveJobSkills([...ex, ...fb]);
+      // 실패해도 게임은 진행 — 빈 배열 저장
+      saveJobSkills([]);
       setJobSkillDone(true);
-      setJobSkillCount(fb.length);
+      setJobSkillCount(0);
     }
     setJobSkillLoading(false);
   };
@@ -873,7 +863,7 @@ JSON 배열만 출력:
     setSugLoading(true); setSuggestions([]);
     try {
       const apiKey = loadApiKeys()[loadKeyIndex()] || "";
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text:cur.prompt(char) }] }], generationConfig:{ temperature:1.1, maxOutputTokens:400 } })
       });
@@ -1291,7 +1281,8 @@ function ChatApp({ apiKeys, character, onReset, onReincarnate, onKeyReset, pastL
     const frags = loadMemoryFragments();
     const fragSection = frags.length > 0 ? `
 [💭 전생 기억 파편]
-${frags.slice(-3).map(f=>f.text).join("\n")}` : "";
+${frags.slice(-3).map(f=>f.text).join("
+")}` : "";
     // 2번: 전생 인연 (pastLife intimateNpcs)
     const intimateNpcs = (char.pastLifeIntimateNpcs || []);
     const intiSection = intimateNpcs.length > 0 ? `
@@ -2275,7 +2266,7 @@ ${char.race ? (() => { const rd = RACE_DEFS.find(r=>r.name===char.race); return 
 
     const _k = (apiKeys&&apiKeys.length)?apiKeys[loadKeyIndex()%apiKeys.length]:"";
     try {
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${_k}`,{
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_k}`,{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({system_instruction:{parts:[{text:systemRef.current}]},contents,generationConfig:{temperature:1.0,maxOutputTokens:2048}})
       });
@@ -2286,31 +2277,23 @@ ${char.race ? (() => { const rd = RACE_DEFS.find(r=>r.name===char.race); return 
   };
 
   const generateChoices = async (history) => {
-    const FALLBACK = ["상황을 파악하며 주변을 살핀다.", "가장 가까운 NPC에게 말을 건다.", "조심스럽게 다음 행동을 준비한다."];
     try {
       const _qk=(apiKeys&&apiKeys.length)?apiKeys[loadKeyIndex()%apiKeys.length]:"";
-      if (!_qk) { setChoices(FALLBACK); return; }
-      const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+_qk,{
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_qk}`,{
         method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[...history.slice(-6).map(m => ({ role:m.role==="assistant"?"model":"user", parts:[{ text:m.content }] })), { role:"user", parts:[{ text:'현재 상황에서 주인공이 취할 수 있는 행동 3가지를 JSON으로만 출력. {"choices":["행동1","행동2","행동3"]}' }] }],generationConfig:{temperature:0.9,maxOutputTokens:250}})
+        body:JSON.stringify({contents:[...history.map(m => ({ role:m.role==="assistant"?"model":"user", parts:[{ text:m.content }] })), { role:"user", parts:[{ text:`다음에 취할 행동 3가지. JSON: {"choices":["행동1","행동2","행동3"]}` }] }],generationConfig:{temperature:0.9,maxOutputTokens:200}})
       });
-      if (!res.ok) throw new Error("HTTP "+res.status);
       const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
       const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      const jm = raw.replace(/```json|```/g,"").trim().match(/\{[\s\S]*\}/);
-      if (!jm) throw new Error("no json");
-      const items = JSON.parse(jm[0]).choices || [];
-      if (!items.length) throw new Error("empty");
-      setChoices(items.slice(0,4));
-    } catch(e) { setChoices(FALLBACK); }
+      setChoices(JSON.parse(raw.replace(/```json|```/g,"").trim()).choices || []);
+    } catch { setChoices([]); }
   };
 
   const updateMid = async (allMessages, apiKey) => {
     const mem = loadMemory();
     const recentRaw = allMessages.slice(-20).map(m => `[${m.role}] ${m.content}`).join("\n");
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text:`${recentRaw}\n위 대화 요약 (400자 이내).` }] }], generationConfig:{ temperature:0.2, maxOutputTokens:600 } })
       });
@@ -2322,7 +2305,7 @@ ${char.race ? (() => { const rd = RACE_DEFS.find(r=>r.name===char.race); return 
 
   const detectGameOver = async (text, apiKey) => {
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text:`장면 분석: "${text.slice(0,400)}"\n죽음/엔딩 여부. JSON: {"result":"death"|"ending"|"none"}` }] }], generationConfig:{ temperature:0.1, maxOutputTokens:80 } })
       });
@@ -2339,7 +2322,7 @@ ${char.race ? (() => { const rd = RACE_DEFS.find(r=>r.name===char.race); return 
       const turnNum = msgCountRef.current;
       const maxHpDmg = turnNum <= 10 ? 8 : turnNum <= 30 ? 15 : 25;
       const maxMpCost = turnNum <= 10 ? 10 : turnNum <= 30 ? 18 : 30;
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           contents:[{ role:"user", parts:[{ text:`장면 분석: "${text.slice(0,300)}"\n가능한 감정 ID: ${emotionIds}\n가능한 스탯 ID: ${statKeys}\n서사에서 체력(HP) 피해나 마나(MP) 소모가 발생했다면 statChanges에 음수 값으로 반영하세요.\n단, HP 피해는 최대 -${maxHpDmg}, MP 소모는 최대 -${maxMpCost}를 초과하지 마세요. 전투 없는 장면에서 HP 피해는 0으로 하세요.\nJSON 출력: {"primary":"감정id", "intensity":0~100, "innerThought":"속마음 요약", "statChanges":{"hp": 변화량, "mp": 변화량}}` }] }],
@@ -2389,7 +2372,7 @@ AI 서사: "${aiText.slice(0,300)}"
 - 이벤트 없음: {"action":"none"}
 소환수 관련 내용이 없으면 반드시 {"action":"none"} 만 출력. JSON만 출력.`;
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text:prompt }] }], generationConfig:{ temperature:0.1, maxOutputTokens:120 } })
       });
@@ -2465,7 +2448,7 @@ AI 서사: "${aiText.slice(0,500)}"
 
 예시 출력: [{"action":"spawn","name":"고블린","count":4,"tier":"weak","skills":["단검 찌르기","독 바르기"],"pattern":"cunning"},{"action":"spawn","name":"오크 대장","count":1,"tier":"elite","skills":["대검 휘두르기"],"pattern":"aggressive"}]`;
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text:prompt }] }], generationConfig:{ temperature:0.1, maxOutputTokens:600 } })
       });
@@ -2879,7 +2862,7 @@ ${healEvents.length > 0 ? `회복한 적: ${healEvents.map(h => `${h.icon}${h.na
 
 한국어 존댓말 나레이션. 각 몬스터의 개성을 살려서 묘사하되 간결하게.`;
 
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ contents:[{ role:"user", parts:[{ text:prompt }] }], generationConfig:{ temperature:0.9, maxOutputTokens:300 } })
       });
@@ -3349,17 +3332,11 @@ ${healEvents.length > 0 ? `회복한 적: ${healEvents.map(h => `${h.icon}${h.na
 
   const startChat = async () => {
     setLoading(true);
-    const char = character;
-    const op = "이야기를 시작합니다.\n주인공: " + char.name + (char.race ? " (" + char.race + ")" : "") + " / 직업: " + char.role + "\n세계관: " + (char.scenario || "판타지") + "\n성격: " + (char.personality || "알 수 없음") + "\n배경: " + (char.background || "알 수 없음") + "\n말투: " + (char.speechStyle || "기본") + "\n\n위 캐릭터로 첫 장면을 생생하게 묘사하고 마지막에 행동 3가지를 제시하세요.\n① [행동1]\n② [행동2]\n③ [행동3]";
     try {
-      const text = await callGemini([], op);
-      const msgObj = { role:"assistant", content:text, characterName:char.name, imageUrl:null, imageLoading:false };
+      const text = await callGemini([], "이야기를 시작해 주십시오. 세계관과 분위기를 살려서 첫 장면을 묘사하십시오.");
+      const msgObj = { role:"assistant", content:text, characterName:character.name, imageUrl:null, imageLoading:false };
       setMessages([msgObj]); generateChoices([msgObj]);
-    } catch {
-      const fallback = char.name + "은(는) 새로운 여정을 시작하려 한다.";
-      setMessages([{ role:"assistant", content:fallback, characterName:char.name }]);
-      setChoices(["주변을 둘러보며 상황을 파악한다.", "가까운 사람에게 말을 건다.", "조용히 다음 행동을 계획한다."]);
-    }
+    } catch { setMessages([{ role:"assistant", content:"소환 실패.", characterName:character.name }]); }
     grantTitle("first_blood"); setLoading(false); setInitialized(true);
   };
 
